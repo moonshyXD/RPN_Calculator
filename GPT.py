@@ -90,17 +90,19 @@ def _to_number(token: str) -> Number:
         return int(token)
 
 
+def push_value(stack: List[List[Number]], value: Number) -> None:
+    stack[-1].append(value)
+
+
+def pop_value(stack: List[List[Number]]) -> Number:
+    if not stack[-1]:
+        raise CalculatorError("Not enough values for operation")
+    return stack[-1].pop()
+
+
 def calculate(tokens: Deque[str]) -> Number:
     """Evaluate tokens in RPN. Supports parentheses as grouping."""
     expressions_stack: List[List[Number]] = [[]]
-
-    def push_value(value: Number):
-        expressions_stack[-1].append(value)
-
-    def pop_value() -> Number:
-        if not expressions_stack[-1]:
-            raise CalculatorError("Not enough values for operation")
-        return expressions_stack[-1].pop()
 
     for token in tokens:
         if token == "(":
@@ -112,12 +114,12 @@ def calculate(tokens: Deque[str]) -> Number:
             inner = expressions_stack.pop()
             if len(inner) != 1:
                 raise CalculatorError("Parenthesis content must reduce to single value")
-            expressions_stack[-1].append(inner[0])
+            push_value(expressions_stack, inner[0])
             continue
 
         if is_number(token):
-            val = _to_number(token)
-            push_value(val)
+            value = _to_number(token)
+            push_value(expressions_stack, value)
             continue
 
         if token not in ('+', '-', '*', '/', '**', '//', '%'):
@@ -126,8 +128,8 @@ def calculate(tokens: Deque[str]) -> Number:
         if len(expressions_stack[-1]) < 2:
             raise CalculatorError(f"Not enough operands for {token}")
 
-        b = pop_value()
-        a = pop_value()
+        b = pop_value(expressions_stack)
+        a = pop_value(expressions_stack)
 
         try:
             if token == '+':
@@ -162,7 +164,7 @@ def calculate(tokens: Deque[str]) -> Number:
         except OverflowError:
             result = float('inf')
 
-        push_value(result)
+        push_value(expressions_stack, result)
 
     if len(expressions_stack) != 1:
         raise CalculatorError("Unbalanced parentheses")
