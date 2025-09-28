@@ -104,7 +104,6 @@ def calculate(tokens: Deque[str]) -> Number:
     """Evaluate tokens in RPN. Supports parentheses as grouping."""
     expressions_stack: List[List[Number]] = [[]]
 
-
     for token in tokens:
         if token == "(":
             expressions_stack.append([])
@@ -132,38 +131,39 @@ def calculate(tokens: Deque[str]) -> Number:
         b = pop_value(expressions_stack)
         a = pop_value(expressions_stack)
 
-        try:
-            if token == '+':
+        match token:
+            case '+':
                 result = a + b
-            elif token == '-':
+            case '-':
                 result = a - b
-            elif token == '*':
+            case '*':
                 result = a * b
-            elif token == '**':
-                if abs(b) > MAX_POWER:
+            case '**':
+                try:
+                    if abs(b) > MAX_POWER:
+                        result = float('inf')
+                    else:
+                        result = a ** b
+                except OverflowError:
                     result = float('inf')
-                else:
-                    result = a ** b
-            elif token == '/':
+            case '/':
                 if b == 0:
                     raise CalculatorError("Float division by zero")
                 result = a / b
-            elif token == '//':
+            case '//':
                 if not isinstance(a, int) or not isinstance(b, int):
                     raise CalculatorError("// works only with integers")
                 if b == 0:
                     raise CalculatorError("Integer division by zero")
                 result = a // b
-            elif token == '%':
+            case '%':
                 if not isinstance(a, int) or not isinstance(b, int):
                     raise CalculatorError("% works only with integers")
                 if b == 0:
                     raise CalculatorError("Modulo division by zero")
                 result = a % b
-            else:
+            case _:
                 raise CalculatorError(f"Unknown operation: {token}")
-        except OverflowError:
-            result = float('inf')
 
         push_value(expressions_stack, result)
 
@@ -190,9 +190,7 @@ def run():
             tokens = tokenize(line)
             check_parentheses(deque(tokens))
             result = calculate(tokens)
-            result_str = str(result)
-            print(len(result_str))
-            print(result_str)
+            print(result)
         except ValueError:
             print("inf")
         except CalculatorError as e:
