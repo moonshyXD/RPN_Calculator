@@ -92,27 +92,27 @@ def _to_number(token: str) -> Number:
 
 def calculate(tokens: Deque[str]) -> Number:
     """Evaluate tokens in RPN. Supports parentheses as grouping."""
-    frames: List[List[Number]] = [[]]
+    expressions_stack: List[List[Number]] = [[]]
 
     def push_value(value: Number):
-        frames[-1].append(value)
+        expressions_stack[-1].append(value)
 
     def pop_value() -> Number:
-        if not frames[-1]:
+        if not expressions_stack[-1]:
             raise CalculatorError("Not enough values for operation")
-        return frames[-1].pop()
+        return expressions_stack[-1].pop()
 
     for token in tokens:
         if token == "(":
-            frames.append([])
+            expressions_stack.append([])
             continue
         if token == ")":
-            if len(frames) == 1:
+            if len(expressions_stack) == 1:
                 raise CalculatorError("Closed parenthesis without open")
-            inner = frames.pop()
+            inner = expressions_stack.pop()
             if len(inner) != 1:
                 raise CalculatorError("Parenthesis content must reduce to single value")
-            frames[-1].append(inner[0])
+            expressions_stack[-1].append(inner[0])
             continue
 
         if is_number(token):
@@ -123,7 +123,7 @@ def calculate(tokens: Deque[str]) -> Number:
         if token not in ('+', '-', '*', '/', '**', '//', '%'):
             raise CalculatorError(f"Unknown token: {token}")
 
-        if len(frames[-1]) < 2:
+        if len(expressions_stack[-1]) < 2:
             raise CalculatorError(f"Not enough operands for {token}")
 
         b = pop_value()
@@ -131,46 +131,46 @@ def calculate(tokens: Deque[str]) -> Number:
 
         try:
             if token == '+':
-                res = a + b
+                result = a + b
             elif token == '-':
-                res = a - b
+                result = a - b
             elif token == '*':
-                res = a * b
+                result = a * b
             elif token == '**':
                 if abs(b) > MAX_POWER:
-                    res = float('inf')
+                    result = float('inf')
                 else:
-                    res = a ** b
+                    result = a ** b
             elif token == '/':
                 if b == 0:
                     raise CalculatorError("Float division by zero")
-                res = a / b
+                result = a / b
             elif token == '//':
                 if not isinstance(a, int) or not isinstance(b, int):
                     raise CalculatorError("// works only with integers")
                 if b == 0:
                     raise CalculatorError("Integer division by zero")
-                res = a // b
+                result = a // b
             elif token == '%':
                 if not isinstance(a, int) or not isinstance(b, int):
                     raise CalculatorError("% works only with integers")
                 if b == 0:
                     raise CalculatorError("Modulo division by zero")
-                res = a % b
+                result = a % b
             else:
                 raise CalculatorError(f"Unknown operation: {token}")
         except OverflowError:
-            res = float('inf')
+            result = float('inf')
 
-        push_value(res)
+        push_value(result)
 
-    if len(frames) != 1:
+    if len(expressions_stack) != 1:
         raise CalculatorError("Unbalanced parentheses")
 
-    top = frames[0]
-    if len(top) != 1:
+    output = expressions_stack[0]
+    if len(output) != 1:
         raise CalculatorError("Invalid RPN expression")
-    return top[0]
+    return output[0]
 
 
 def run():
