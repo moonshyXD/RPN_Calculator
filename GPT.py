@@ -104,6 +104,7 @@ def calculate(tokens: Deque[str]) -> Number:
     """Evaluate tokens in RPN. Supports parentheses as grouping."""
     expressions_stack: List[List[Number]] = [[]]
 
+
     for token in tokens:
         if token == "(":
             expressions_stack.append([])
