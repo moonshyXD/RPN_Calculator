@@ -1,5 +1,4 @@
 from main import *
-from collections import deque
 
 tests_correct = [
     ("3 4 +", 7),                       # 3 + 4

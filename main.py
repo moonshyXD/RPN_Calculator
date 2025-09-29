@@ -12,16 +12,15 @@ RPN calculator (M3 variant) with optional parentheses validation.
 - No eval/exec used.
 """
 
-from collections import deque
 import sys, tests
-from typing import Deque, List, Union
+from typing import List, Union
 from CalculatorErrors import *
 
 MAX_POWER = 10 ** 6
 Number = Union[int, float]
 
 
-def check_parentheses(tokens: Deque[str]) -> None:
+def check_parentheses(tokens: List[str]) -> None:
     """Check balanced parentheses. Raises CalculatorError on problems."""
     count = 0
     for t in tokens:
@@ -35,7 +34,7 @@ def check_parentheses(tokens: Deque[str]) -> None:
         raise CalculatorSyntaxError("Unbalanced parentheses")
 
 
-def tokenize(expression: str) -> Deque[str]:
+def tokenize(expression: str) -> List[str]:
     """
     Tokenize an RPN expression line.
     Assumes tokens are separated by whitespace.
@@ -43,7 +42,7 @@ def tokenize(expression: str) -> Deque[str]:
     Numbers may have leading + or -.
     """
     parts = expression.strip().split()
-    tokens = deque()
+    tokens = []
     for p in parts:
         if p == '' or p is None:
             continue
@@ -95,7 +94,7 @@ def pop_value(stack: List[List[Number]]) -> Number:
     return stack[-1].pop()
 
 
-def calculate(tokens: Deque[str]) -> Number:
+def calculate(tokens: List[str]) -> Number:
     """Evaluate tokens in RPN. Supports parentheses as grouping."""
     expressions_stack: List[List[Number]] = [[]]
 
