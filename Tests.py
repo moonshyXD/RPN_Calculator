@@ -1,4 +1,4 @@
-from main import *
+import Lexer, Evaluate
 
 tests_correct = [
     ("3 4 +", 7),                       # 3 + 4
@@ -40,7 +40,7 @@ tests_type_error = [
 tests_large_power = [
     (f"2 {10**9} **", float('inf')),    # слишком большая степень
     ("2 1000000 **", float('inf')),     # граничное значение MAX_POWER
-    ("2 -100 **", 0.0),                 # маленькая степень
+    ("2 -100 **", 7.888609052210118e-31),                 # маленькая степень
 ]
 
 tests_syntax_error = [
@@ -77,9 +77,9 @@ def test_calculator():
 
     for expression, expected in all_tests:
         try:
-            tokens = tokenize(expression)
-            check_parentheses(tokens)
-            result = calculate(tokens)
+            tokens = Lexer.tokenize(expression)
+            Lexer.check_parentheses(tokens)
+            result = Evaluate.calculate(tokens)
             if isinstance(expected, type) and issubclass(expected, BaseException):
                 raise AssertionError(f"Fail: {expression} -> expected exception {expected}, got {result}")
             else:

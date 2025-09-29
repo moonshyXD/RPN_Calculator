@@ -1,4 +1,4 @@
-from CalculatorErrors import *
+from CalculatorErrors import CalculatorTypeError, CalculatorZeroDivisionError
 
 MAX_POWER = 10 ** 6
 
@@ -28,5 +28,5 @@ OPERATORS = {
     '/': lambda a, b: division(a, b),
     '//': lambda a, b: int_division(a, b),
     '%': lambda a, b: modulo(a, b),
-    '**': lambda a, b: a ** b if abs(b) <= MAX_POWER else float('inf'),
+    '**': lambda a, b: a ** b if abs(b) < MAX_POWER else float('inf')
 }
