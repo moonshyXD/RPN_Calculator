@@ -1,36 +1,28 @@
-from tests import *
+# File: rpn_calculator_m3.py
+"""
+RPN calculator (M3 variant) with optional parentheses validation.
 
+- Supports: +, -, *, /, **, //, %
+- // and % only for integers
+- Unary + / - are allowed as part of number tokens (e.g., -3 or +4.5)
+- Parentheses may be present in input; each parentheses group must itself be a valid RPN expression that reduces to a single value:
+    Examples: ( 2 ) -> OK
+              ( 1 2 + ) -> OK
+              ( 1 2 ) + -> INVALID (inside parentheses leaves more than one value)
+- No eval/exec used.
+"""
 
-def test_calculator():
-    all_tests = tests_correct + tests_zero_division + tests_type_error + \
-                tests_large_power + tests_syntax_error + \
-                tests_parentheses_valid + tests_parentheses_invalid
-
-    for tokens, expected in all_tests:
-        try:
-            check_parentheses(deque(tokens))
-            tokens_clean = deque([t for t in tokens if t not in ("(", ")")])
-            result = calculate(tokens_clean)
-            if isinstance(expected, type) and issubclass(expected, BaseException):
-                raise AssertionError(f"Fail: {tokens} -> expected exception {expected}, got {result}")
-            else:
-                assert result == expected, f"Fail: {tokens} -> {result}, expected {expected}"
-        except Exception as e:
-            if isinstance(expected, type) and issubclass(expected, BaseException):
-                assert isinstance(e, expected), f"Fail: {tokens} -> {type(e)}, expected {expected}"
-            else:
-                raise
-
-    print("All tests passed!")
-
-
-import sys, string, re
 from collections import deque
+import sys, tests
+from typing import Deque, List, Union
+from CalculatorErrors import *
 
 MAX_POWER = 10 ** 6
+Number = Union[int, float]
 
 
-def check_parentheses(tokens):
+def check_parentheses(tokens: Deque[str]) -> None:
+    """Check balanced parentheses. Raises CalculatorError on problems."""
     count = 0
     for t in tokens:
         if t == "(":
@@ -38,122 +30,167 @@ def check_parentheses(tokens):
         elif t == ")":
             count -= 1
             if count < 0:
-                raise SyntaxError("CLOSED PARANTHES MUST BE OPEN")
+                raise CalculatorSyntaxError("Closed parenthesis without open")
     if count != 0:
-        raise SyntaxError("UNBALANCED PARENTHESES")
+        raise CalculatorSyntaxError("Unbalanced parentheses")
 
 
-def tokenize(expression: str):
-    # Tokenize line
+def tokenize(expression: str) -> Deque[str]:
+    """
+    Tokenize an RPN expression line.
+    Assumes tokens are separated by whitespace.
+    Keeps parentheses tokens '(' and ')'.
+    Numbers may have leading + or -.
+    """
+    parts = expression.strip().split()
     tokens = deque()
-    expression = expression.strip().split()
-    countStartParenthesis = 0
-    countEndParenthesis = 0
-    for token in expression:
-        if token in '()':
-            pass
-        elif token[0] == '~':
-            token = '-' + token[1:]
-            tokens.append(token)
-        elif token[0] == '$':
-            token = token[1:]
-            tokens.append(token)
+    for p in parts:
+        if p == '' or p is None:
+            continue
+        if p in ("(", ")"):
+            tokens.append(p)
+            continue
+        if p[0] == "~":
+            tokens.append(str(-_to_number(p[1:])))
+        elif p[0] == "$":
+            tokens.append(p[1:])
         else:
-            tokens.append(token)
-
-    if countStartParenthesis != countEndParenthesis:
-        raise SyntaxError('UNBALANCED PARENTHESIS')
-
+            tokens.append(p)
     return tokens
 
 
-def isNumber(token: str) -> bool:
-    # Check if this token is a number
-    print('TOKEN: ', token)
+def is_number(token: str) -> bool:
+    """Return True if token is integer or float literal (with optional leading + or -)."""
     try:
-        float(token)
-        return True
+        if '.' in token or 'e' in token or 'E' in token:
+            float(token)
+            return True
+        else:
+            int(token)
+            return True
     except ValueError:
-        if any(element in string.digits for element in token):
-            raise SyntaxError(f'INVALID NUMBER: {token}')
+        if any(ch.isdigit() for ch in token):
+            raise CalculatorSyntaxError(f"Invalid number: {token}")
         return False
 
 
-def isOperation(token: str) -> bool:
-    # check if this token is operation
-    return token in ['+', '-', '*', '/', '**', '//', '%', '(', ')', '$', '~']
+def _to_number(token: str) -> Number:
+    """Convert token to int or float."""
+    if '.' in token or 'e' in token or 'E' in token:
+        number = float(token)
+        if number.is_integer():
+            return int(number)
+        return number
+    else:
+        return int(token)
 
 
-def calculate(tokens: deque):
-    # calculate expression
-    stack = deque()
+def push_value(stack: List[List[Number]], value: Number) -> None:
+    stack[-1].append(value)
+
+
+def pop_value(stack: List[List[Number]]) -> Number:
+    if not stack[-1]:
+        raise CalculatorSyntaxError("Not enough values for operation")
+    return stack[-1].pop()
+
+
+def calculate(tokens: Deque[str]) -> Number:
+    """Evaluate tokens in RPN. Supports parentheses as grouping."""
+    expressions_stack: List[List[Number]] = [[]]
+
     for token in tokens:
-        if isNumber(token):
-            number = float(token)
-            if number.is_integer():
-                stack.append(int(number))
-            else:
-                stack.append(number)
-        elif isOperation(token):
-            if len(stack) < 2:
-                raise SyntaxError(f"INVALID RPN EXPRESSION FOR TOKEN {token}")
-            b = stack.pop()
-            a = stack.pop()
+        if token == "(":
+            expressions_stack.append([])
+            continue
+        if token == ")":
+            if len(expressions_stack) == 1:
+                raise CalculatorSyntaxError("Closed parenthesis without open")
+            inner = expressions_stack.pop()
+            if len(inner) != 1:
+                raise CalculatorSyntaxError("Parenthesis content must reduce to single value")
+            push_value(expressions_stack, inner[0])
+            continue
 
-            match token:
-                case '+':
-                    result = a + b
-                case '-':
-                    result = a - b
-                case '*':
-                    result = a * b
-                case '**':
+        if is_number(token):
+            value = _to_number(token)
+            push_value(expressions_stack, value)
+            continue
+
+        if token not in ('+', '-', '*', '/', '**', '//', '%'):
+            raise CalculatorSyntaxError(f"Unknown token: {token}")
+
+        if len(expressions_stack[-1]) < 2:
+            raise CalculatorSyntaxError(f"Not enough operands for {token}")
+
+        b = pop_value(expressions_stack)
+        a = pop_value(expressions_stack)
+
+        match token:
+            case '+':
+                result = a + b
+            case '-':
+                result = a - b
+            case '*':
+                result = a * b
+            case '**':
+                try:
                     if abs(b) > MAX_POWER:
                         result = float('inf')
                     else:
                         result = a ** b
-                case '/':
-                    if b == 0:
-                        raise ZeroDivisionError
-                    result = a / b
-                case '//':
-                    if not isinstance(a, int) or not isinstance(b, int):
-                        raise TypeError("// WORKS ONLY WITH INTEGERS")
-                    if b == 0:
-                        raise ZeroDivisionError
-                    result = a // b
-                case '%':
-                    if not isinstance(a, int) or not isinstance(b, int):
-                        raise TypeError("% WORKS ONLY WITH INTEGERS")
-                    if b == 0:
-                        raise ZeroDivisionError
-                    result = a % b
-                case ')':
-                    pass
-                case '(':
-                    pass
-                case _:
-                    raise SyntaxError("UNKNOWN OPERATION")
-            stack.append(result)
-        else:
-            raise SyntaxError(f"UNKNOWN TOKEN: {token}")
-    if len(stack) != 1:
-        raise SyntaxError("INVALID RPN EXPRESSION")
-    return stack.pop()
+                except OverflowError:
+                    result = float('inf')
+            case '/':
+                if b == 0:
+                    raise CalculatorZeroDivisionError("Float division by zero")
+                result = a / b
+            case '//':
+                if not isinstance(a, int) or not isinstance(b, int):
+                    raise CalculatorTypeError("// works only with integers")
+                if b == 0:
+                    raise CalculatorZeroDivisionError("Integer division by zero")
+                result = a // b
+            case '%':
+                if not isinstance(a, int) or not isinstance(b, int):
+                    raise CalculatorTypeError("% works only with integers")
+                if b == 0:
+                    raise CalculatorZeroDivisionError("Modulo division by zero")
+                result = a % b
+            case _:
+                raise CalculatorSyntaxError(f"Unknown operation: {token}")
+
+        push_value(expressions_stack, result)
+
+    if len(expressions_stack) != 1:
+        raise CalculatorSyntaxError("Unbalanced parentheses")
+
+    output = expressions_stack[0]
+    if len(output) != 1:
+        raise CalculatorSyntaxError("Invalid RPN expression")
+    return output[0]
 
 
 def run():
-    test_calculator()
+    tests.test_calculator()
+    print(
+        "Welcome to RPN calculator! Enter RPN expressions, tokens separated by spaces. "
+        "Parentheses allowed. Unary +-($~) must be written with number without space."
+    )
     for line in sys.stdin:
-        tokens = tokenize(line)
-        print("LINE:", tokens)
-        result = calculate(tokens)
+        line = line.strip()
+        if not line:
+            continue
         try:
-            print("RESULT:", result)
-        except ValueError:
-            result = float('inf')
+            tokens = tokenize(line)
+            check_parentheses(deque(tokens))
+            result = calculate(tokens)
             print(result)
+        except ValueError:
+            print("inf")
+        except CalculatorError as e:
+            print("CalculatorError:", e)
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     run()
