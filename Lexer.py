@@ -1,22 +1,7 @@
-from typing import List, Union
+from typing import List, Union, Optional
 from CalculatorErrors import CalculatorSyntaxError
 
 Number = Union[int, float]
-
-
-def check_parentheses(tokens: List[str]) -> None:
-    """Check balanced parentheses. Raises CalculatorError on problems."""
-    count = 0
-    for t in tokens:
-        if t == "(":
-            count += 1
-        elif t == ")":
-            count -= 1
-            if count < 0:
-                raise CalculatorSyntaxError("Closed parenthesis without open")
-    if count != 0:
-        raise CalculatorSyntaxError("Unbalanced parentheses")
-
 
 def tokenize(expression: str) -> List[str]:
     """
@@ -25,9 +10,9 @@ def tokenize(expression: str) -> List[str]:
     Keeps parentheses tokens '(' and ')'.
     Numbers may have leading + or -.
     """
-    parts = expression.strip().split()
+    expression = expression.strip().split()
     tokens = []
-    for p in parts:
+    for p in expression:
         if p == '' or p is None:
             continue
         if p in ("(", ")"):
@@ -41,28 +26,24 @@ def tokenize(expression: str) -> List[str]:
             tokens.append(p)
     return tokens
 
-
-def is_number(token: str) -> bool:
-    """Return True if token is integer or float literal (with optional leading + or -)."""
+def parse_number(token: str) -> Optional[Number]:
+    """Try to parse token into number. Return None if not a number."""
     try:
-        if '.' in token or 'e' in token or 'E' in token:
-            float(token)
-            return True
-        else:
-            int(token)
-            return True
+        if "." in token or "e" in token or "E" in token:
+            num = float(token)
+            return int(num) if num.is_integer() else num
+        return int(token)
     except ValueError:
-        if any(ch.isdigit() for ch in token):
-            raise CalculatorSyntaxError(f"Invalid number: {token}")
-        return False
+        return None
 
 
 def to_number(token: str) -> Number:
-    """Convert token to int or float."""
-    if '.' in token or 'e' in token or 'E' in token:
-        number = float(token)
-        if number.is_integer():
-            return int(number)
-        return number
-    else:
-        return int(token)
+    """Convert token to number or raise error."""
+    value = parse_number(token)
+    if value is None:
+        raise CalculatorSyntaxError(f"Invalid number: {token}")
+    return value
+
+
+def is_number(token: str) -> bool:
+    return parse_number(token) is not None

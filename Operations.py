@@ -25,8 +25,8 @@ OPERATORS = {
     '+': lambda a, b: a + b,
     '-': lambda a, b: a - b,
     '*': lambda a, b: a * b,
-    '/': lambda a, b: division(a, b),
-    '//': lambda a, b: int_division(a, b),
-    '%': lambda a, b: modulo(a, b),
+    '/': division,
+    '//': int_division,
+    '%': modulo,
     '**': lambda a, b: a ** b if abs(b) < MAX_POWER else float('inf')
 }

@@ -78,7 +78,6 @@ def test_calculator():
     for expression, expected in all_tests:
         try:
             tokens = Lexer.tokenize(expression)
-            Lexer.check_parentheses(tokens)
             result = Evaluate.calculate(tokens)
             if isinstance(expected, type) and issubclass(expected, BaseException):
                 raise AssertionError(f"Fail: {expression} -> expected exception {expected}, got {result}")

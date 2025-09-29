@@ -26,7 +26,6 @@ def run():
             continue
         try:
             tokens = Lexer.tokenize(line)
-            Lexer.check_parentheses(tokens)
             result = Evaluate.calculate(tokens)
             print(result)
         except ValueError:
