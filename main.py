@@ -15,8 +15,8 @@ RPN calculator (M3 variant) with optional parentheses validation.
 import sys, tests
 from typing import List, Union
 from CalculatorErrors import *
+from Operations import OPERATORS
 
-MAX_POWER = 10 ** 6
 Number = Union[int, float]
 
 
@@ -116,7 +116,7 @@ def calculate(tokens: List[str]) -> Number:
             push_value(expressions_stack, value)
             continue
 
-        if token not in ('+', '-', '*', '/', '**', '//', '%'):
+        if token not in OPERATORS:
             raise CalculatorSyntaxError(f"Unknown token: {token}")
 
         if len(expressions_stack[-1]) < 2:
@@ -125,40 +125,7 @@ def calculate(tokens: List[str]) -> Number:
         b = pop_value(expressions_stack)
         a = pop_value(expressions_stack)
 
-        match token:
-            case '+':
-                result = a + b
-            case '-':
-                result = a - b
-            case '*':
-                result = a * b
-            case '**':
-                try:
-                    if abs(b) > MAX_POWER:
-                        result = float('inf')
-                    else:
-                        result = a ** b
-                except OverflowError:
-                    result = float('inf')
-            case '/':
-                if b == 0:
-                    raise CalculatorZeroDivisionError("Float division by zero")
-                result = a / b
-            case '//':
-                if not isinstance(a, int) or not isinstance(b, int):
-                    raise CalculatorTypeError("// works only with integers")
-                if b == 0:
-                    raise CalculatorZeroDivisionError("Integer division by zero")
-                result = a // b
-            case '%':
-                if not isinstance(a, int) or not isinstance(b, int):
-                    raise CalculatorTypeError("% works only with integers")
-                if b == 0:
-                    raise CalculatorZeroDivisionError("Modulo division by zero")
-                result = a % b
-            case _:
-                raise CalculatorSyntaxError(f"Unknown operation: {token}")
-
+        result = OPERATORS[token](a, b)
         push_value(expressions_stack, result)
 
     if len(expressions_stack) != 1:
