@@ -15,7 +15,6 @@ import sys, Tests, Evaluate, Lexer
 from CalculatorErrors import *
 
 def run():
-    Tests.test_calculator()
     print(
         "Welcome to RPN calculator! Enter RPN expressions, tokens separated by spaces. "
         "Parentheses allowed. Unary +-($~) must be written with number without space."
@@ -35,4 +34,5 @@ def run():
 
 
 if __name__ == "__main__":
+    Tests.test_calculator()
     run()
