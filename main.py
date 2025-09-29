@@ -1,4 +1,3 @@
-# File: rpn_calculator_m3.py
 """
 RPN calculator (M3 variant) with optional parentheses validation.
 
