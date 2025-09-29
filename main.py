@@ -183,7 +183,7 @@ def run():
             continue
         try:
             tokens = tokenize(line)
-            check_parentheses(deque(tokens))
+            check_parentheses(tokens)
             result = calculate(tokens)
             print(result)
         except ValueError:

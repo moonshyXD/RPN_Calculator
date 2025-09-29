@@ -61,7 +61,7 @@ def test_calculator():
     for expression, expected in all_tests:
         try:
             tokens = tokenize(expression)
-            check_parentheses(deque(tokens))
+            check_parentheses(tokens)
             tokens_clean = deque([t for t in tokens if t not in ("(", ")")])
             result = calculate(tokens_clean)
             if isinstance(expected, type) and issubclass(expected, BaseException):
